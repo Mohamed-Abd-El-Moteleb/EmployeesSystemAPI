@@ -21,7 +21,7 @@ EmployeesSystemAPI is a RESTful API built with ASP.NET Core for managing employe
 - .NET 8
 - ASP.NET Core Web API
 - Entity Framework Core
-- SQL Server (or your database)
+- SQL Server
 - Swagger (OpenAPI) for API documentation
 
 ---
