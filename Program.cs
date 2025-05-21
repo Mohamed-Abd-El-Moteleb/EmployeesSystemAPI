@@ -1,12 +1,14 @@
 
 using EmployeesSystem.Models;
 using Microsoft.EntityFrameworkCore;
+using EmployeesSystem.Utility;
+using Microsoft.AspNetCore.Identity;
 
 namespace EmployeesSystem
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main (string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +19,11 @@ namespace EmployeesSystem
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CS"));
             });
 
-            builder.Services.AddEndpointsApiExplorer();
+			builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+	        .AddEntityFrameworkStores<ApplicationDbContext>()
+	        .AddDefaultTokenProviders();
+
+			builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddSwaggerGen();
 
@@ -30,9 +36,18 @@ namespace EmployeesSystem
 
             });
 
-            var app = builder.Build();
+			var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
+
+			using (var scope = app.Services.CreateScope())
+			{
+				var services = scope.ServiceProvider;
+				await Seeder.SeedAdminAsync(services);
+
+			}
+
+
+			if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
