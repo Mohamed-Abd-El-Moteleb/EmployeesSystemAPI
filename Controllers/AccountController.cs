@@ -3,6 +3,10 @@ using EmployeesSystem.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace EmployeesSystem.Controllers
 {
@@ -12,11 +16,13 @@ namespace EmployeesSystem.Controllers
     {
 		private readonly UserManager<ApplicationUser> _userManager;
 		private readonly SignInManager<ApplicationUser> _signInManager;
+		private readonly IConfiguration _configuration;
 
-		public AccountController(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager)
+		public AccountController(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager,IConfiguration configuration)
 		{
 			_userManager = userManager;
 			_signInManager = signInManager;
+			_configuration = configuration;
 		}
 		[HttpPost("Login")]
 		public async Task<IActionResult> Login([FromBody] LoginDTO model)
@@ -42,8 +48,33 @@ namespace EmployeesSystem.Controllers
 			{
 				return Unauthorized("Invalid username or password.");
 			}
-			return Ok(new { message = "Login successful." });
+			else
+			{
+				var authClaims = new List<Claim>
+				{
+					new Claim(ClaimTypes.NameIdentifier,user.Id),
+					new Claim(ClaimTypes.Name,user.UserName),
+					new Claim(ClaimTypes.Role,"Admin"),
+					new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString())
+				};
 
+				var authSignInKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+
+				JwtSecurityToken token = new JwtSecurityToken
+					(
+						issuer: _configuration["Jwt:Issuer"],
+						audience: _configuration["Jwt:Audience"],
+						expires:DateTime.UtcNow.AddHours(1),
+						claims:authClaims,
+						signingCredentials:new SigningCredentials(authSignInKey,SecurityAlgorithms.HmacSha256)
+					);
+
+				return Ok(new
+				{
+					token = new JwtSecurityTokenHandler().WriteToken(token),
+					expiration = token.ValidTo
+				});
+			}
 		}
 	}
 }

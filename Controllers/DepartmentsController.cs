@@ -8,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using EmployeesSystem.Models;
 using Humanizer;
 using EmployeesSystem.Dtos.DepartmentDTOS;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EmployeesSystem.Controllers
 {
+	[Authorize(Roles ="Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class DepartmentsController : ControllerBase
